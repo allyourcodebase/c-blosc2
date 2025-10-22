@@ -1,0 +1,24 @@
+.{
+    .name = .c_blosc2,
+    .version = "2.21.3",
+    .dependencies = .{
+        .c_blosc2 = .{
+            .url = "git+https://github.com/Blosc/c-blosc2?ref=v2.21.3#0c853a639ba97997e33e29db9eed202459ebc6f0",
+            .hash = "N-V-__8AABtlIQEWY9A8rCWuxQog0nf3MXG0TBWr3HNyRqjv",
+        },
+        .lz4 = .{
+            .url = "git+https://github.com/allyourcodebase/lz4.git#873969ee73aecb3c35203feaf0b5727b9d02b864",
+            .hash = "lz4-1.10.0-5-ewyzw7YNAADOUkQ7M9fjW005oGzxt9b6m0uPd_kQC48z",
+        },
+        .zstd = .{
+            .url = "git+https://github.com/allyourcodebase/zstd.git?ref=1.5.7#01327d49cbc56dc24c20a167bb0055d7fc23de84",
+            .hash = "zstd-1.5.7-KEItkJ8vAAC5_rRlKmLflYQ-eKXbAIQBWZNmmJtS18q0",
+        },
+    },
+    .minimum_zig_version = "0.15.2",
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+    },
+    .fingerprint = 0x44d08dca0c10c5a2,
+}
