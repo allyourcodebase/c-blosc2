@@ -92,4 +92,55 @@ pub fn build(b: *std.Build) void {
     c_blosc2_library.installHeadersDirectory(c_blosc2_source.path("include"), ".", .{});
 
     b.installArtifact(c_blosc2_library);
+
+    // Examples
+    const example_options: ExampleOptions = .{
+        .target = target,
+        .optimize = optimize,
+        .c_blosc2 = c_blosc2_library,
+    };
+    addExample(b, "contexts", c_blosc2_source.path("examples/contexts.c"), example_options);
+    addExample(b, "instrument_codec", c_blosc2_source.path("examples/instrument_codec.c"), example_options);
+    addExample(b, "delta_schunk_ex", c_blosc2_source.path("examples/delta_schunk_ex.c"), example_options);
+    addExample(b, "multithread", c_blosc2_source.path("examples/multithread.c"), example_options);
+    addExample(b, "simple", c_blosc2_source.path("examples/simple.c"), example_options);
+    addExample(b, "frame_metalayers", c_blosc2_source.path("examples/frame_metalayers.c"), example_options);
+    addExample(b, "noinit", c_blosc2_source.path("examples/noinit.c"), example_options);
+    addExample(b, "find_roots", c_blosc2_source.path("examples/find_roots.c"), example_options);
+    addExample(b, "schunk_simple", c_blosc2_source.path("examples/schunk_simple.c"), example_options);
+    addExample(b, "frame_simple", c_blosc2_source.path("examples/frame_simple.c"), example_options);
+    addExample(b, "schunk_postfilter", c_blosc2_source.path("examples/schunk_postfilter.c"), example_options);
+    addExample(b, "urcodecs", c_blosc2_source.path("examples/urcodecs.c"), example_options);
+    addExample(b, "urfilters", c_blosc2_source.path("examples/urfilters.c"), example_options);
+    addExample(b, "frame_vlmetalayers", c_blosc2_source.path("examples/frame_vlmetalayers.c"), example_options);
+    addExample(b, "sframe_simple", c_blosc2_source.path("examples/sframe_simple.c"), example_options);
+    addExample(b, "frame_backed_schunk", c_blosc2_source.path("examples/frame_backed_schunk.c"), example_options);
+    addExample(b, "compress_file", c_blosc2_source.path("examples/compress_file.c"), example_options);
+    addExample(b, "decompress_file", c_blosc2_source.path("examples/decompress_file.c"), example_options);
+    addExample(b, "frame_offset", c_blosc2_source.path("examples/frame_offset.c"), example_options);
+    addExample(b, "frame_roundtrip", c_blosc2_source.path("examples/frame_roundtrip.c"), example_options);
+    addExample(b, "get_set_slice", c_blosc2_source.path("examples/get_set_slice.c"), example_options);
+    addExample(b, "get_blocksize", c_blosc2_source.path("examples/get_blocksize.c"), example_options);
+}
+
+pub const ExampleOptions = struct {
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    c_blosc2: *std.Build.Step.Compile,
+};
+
+fn addExample(b: *std.Build, name: []const u8, path: std.Build.LazyPath, options: ExampleOptions) void {
+    const exe = b.addExecutable(.{
+        .name = name,
+        .root_module = b.createModule(.{
+            .target = options.target,
+            .optimize = options.optimize,
+            .link_libc = true,
+        }),
+    });
+    exe.root_module.linkLibrary(options.c_blosc2);
+    exe.root_module.addCSourceFile(.{
+        .file = path,
+    });
+    b.installArtifact(exe);
 }
