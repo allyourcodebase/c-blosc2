@@ -19,6 +19,7 @@
     .paths = .{
         "build.zig",
         "build.zig.zon",
+        "testing_template_dir",
     },
     .fingerprint = 0x44d08dca0c10c5a2,
 }

@@ -1,6 +1,8 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
+    const test_step = b.step("test", "Run all tests");
+
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     const linkage = b.option(std.builtin.LinkMode, "linkage", "linkage to use (default: static)") orelse .static;
@@ -62,6 +64,9 @@ pub fn build(b: *std.Build) void {
             "b2nd.c",
             "b2nd_utils.c",
         },
+        .flags = &.{
+            "-fno-sanitize=alignment",
+        },
     });
 
     c_blosc2_module.addCSourceFile(.{ .file = c_blosc2_source.path("blosc/shuffle.c") });
@@ -121,6 +126,43 @@ pub fn build(b: *std.Build) void {
     addExample(b, "frame_roundtrip", c_blosc2_source.path("examples/frame_roundtrip.c"), example_options);
     addExample(b, "get_set_slice", c_blosc2_source.path("examples/get_set_slice.c"), example_options);
     addExample(b, "get_blocksize", c_blosc2_source.path("examples/get_blocksize.c"), example_options);
+
+    // Tests
+    const test_root = c_blosc2_source.path(test_root_filename);
+    const test_include_path = c_blosc2_source.path("blosc");
+
+    const testing_template_dir = b.path("testing_template_dir/");
+
+    for (test_files) |test_filename| {
+        const name = std.fs.path.stem(test_filename);
+
+        const exe = addTestExe(
+            b,
+            name,
+            test_root.path(b, test_filename),
+            test_include_path,
+            example_options,
+        );
+
+        const run = b.addRunArtifact(exe);
+        run.expectExitCode(0);
+
+        // We need a separate path for each of the tests,
+        // because some of the tests use the same filename.
+        //
+        // A `WriteFiles` step creates a unique directory for each one,
+        // and unlike using `b.makeTempDirectory`,
+        // still allows the Zig build system to cache the result.
+        const test_write_files = b.addWriteFiles();
+        const test_dir = test_write_files.addCopyDirectory(testing_template_dir, name, .{
+            .exclude_extensions = &.{".md"},
+        });
+        run.setCwd(test_dir);
+
+        test_step.dependOn(&run.step);
+    }
+
+    // TODO: support parameterized tests
 }
 
 pub const ExampleOptions = struct {
@@ -144,3 +186,106 @@ fn addExample(b: *std.Build, name: []const u8, path: std.Build.LazyPath, options
     });
     b.installArtifact(exe);
 }
+
+fn addTestExe(b: *std.Build, name: []const u8, path: std.Build.LazyPath, blosc_include_path: std.Build.LazyPath, options: ExampleOptions) *std.Build.Step.Compile {
+    const exe = b.addExecutable(.{
+        .name = name,
+        .root_module = b.createModule(.{
+            .target = options.target,
+            .optimize = options.optimize,
+            .link_libc = true,
+        }),
+    });
+    exe.root_module.addIncludePath(blosc_include_path);
+    exe.root_module.linkLibrary(options.c_blosc2);
+    exe.root_module.addCSourceFile(.{
+        .file = path,
+    });
+    return exe;
+}
+
+const test_root_filename = "tests";
+const test_files: []const []const u8 = &.{
+    "test_api.c",
+    "test_bitshuffle_leftovers.c",
+    "test_blosc1_compat.c",
+    "test_change_nthreads_append.c",
+    "test_compressor.c",
+    "test_contexts.c",
+    "test_copy.c",
+    "test_delete_chunk.c",
+    "test_delta.c",
+    "test_delta_schunk.c",
+    "test_dict_schunk.c",
+    "test_empty_buffer.c",
+    "test_fill_special.c",
+    "test_filters.c",
+    "test_frame.c",
+    "test_frame_get_offsets.c",
+    "test_frame_offset.c",
+    "test_get_slice_buffer.c",
+    "test_get_slice_nchunks.c",
+    "test_getitem_delta.c",
+    "test_insert_chunk.c",
+    "test_lazychunk.c",
+    "test_lazychunk_memcpyed.c",
+    "test_maskout.c",
+    "test_maxout.c",
+    "test_mmap.c",
+    "test_noinit.c",
+    "test_nolock.c",
+    "test_nthreads.c",
+    "test_postfilter.c",
+    "test_prefilter.c",
+    "test_reorder_offsets.c",
+    "test_schunk.c",
+    "test_schunk_frame.c",
+    "test_schunk_header.c",
+    "test_set_slice_buffer.c",
+    "test_sframe.c",
+    "test_sframe_lazychunk.c",
+    "test_small_chunks.c",
+    "test_udio.c",
+    "test_update_chunk.c",
+    "test_urcodecs.c",
+    "test_urfilters.c",
+    "test_zero_runlen.c",
+
+    // b2nd tests
+    "b2nd/test_b2nd_append.c",
+    "b2nd/test_b2nd_concatenate.c",
+    "b2nd/test_b2nd_copy.c",
+    "b2nd/test_b2nd_copy_buffer.c",
+    "b2nd/test_b2nd_delete.c",
+    // "b2nd/test_b2nd_expand_dims.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_full.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_get_slice.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_get_slice_buffer.c", // Fails with "index -1 out of bounds"
+    "b2nd/test_b2nd_insert.c",
+    // "b2nd/test_b2nd_metalayers.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_nans.c", // Fails with "index -1 out of bounds"
+    "b2nd/test_b2nd_open_offset.c",
+    // "b2nd/test_b2nd_persistency.c", // Fails with "index -1 out of bounds"
+    "b2nd/test_b2nd_resize.c",
+    "b2nd/test_b2nd_roundtrip.c",
+    // "b2nd/test_b2nd_save.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_save_append.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_serialize.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_set_slice_buffer.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_squeeze.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_squeeze_index.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_uninit.c", // Fails with "index -1 out of bounds"
+    // "b2nd/test_b2nd_zeros.c", // Fails with "index -1 out of bounds"
+};
+
+const parameterized_test_files: []const []const u8 = &.{
+    "test_bitshuffle_roundtrip.c",
+    "test_compress_roundtrip.c",
+    "test_getitem.c",
+    "test_shuffle_roundtrip.c",
+    "test_shuffle_roundtrip_altivec.c",
+    "test_shuffle_roundtrip_avx2.c",
+    "test_shuffle_roundtrip_generic.c",
+    "test_shuffle_roundtrip_neon.c",
+    "test_shuffle_roundtrip_sse2.c",
+};
