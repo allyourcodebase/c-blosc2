@@ -1,10 +1,10 @@
 .{
     .name = .c_blosc2,
-    .version = "2.21.3",
+    .version = "2.21.4-dev",
     .dependencies = .{
         .c_blosc2 = .{
-            .url = "git+https://github.com/Blosc/c-blosc2?ref=v2.21.3#0c853a639ba97997e33e29db9eed202459ebc6f0",
-            .hash = "N-V-__8AABtlIQEWY9A8rCWuxQog0nf3MXG0TBWr3HNyRqjv",
+            .url = "git+https://github.com/Blosc/c-blosc2#077a0fb79167c513c365dd26d72e4a7ab72ec728",
+            .hash = "N-V-__8AAN9OIQEF-V6JYGiXFkD7oHrek551gaSn3uFSs_1M",
         },
         .lz4 = .{
             .url = "git+https://github.com/allyourcodebase/lz4.git#873969ee73aecb3c35203feaf0b5727b9d02b864",

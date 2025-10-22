@@ -272,25 +272,25 @@ const test_files: []const []const u8 = &.{
     // "b2nd/test_b2nd_copy.c", // memcpy from null detected on ubuntu tester
     // "b2nd/test_b2nd_copy_buffer.c", // memcpy from null detected on ubuntu tester
     // "b2nd/test_b2nd_delete.c", // memcpy from null detected on ubuntu tester
-    // "b2nd/test_b2nd_expand_dims.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_full.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_get_slice.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_get_slice_buffer.c", // Fails with "index -1 out of bounds"
+    "b2nd/test_b2nd_expand_dims.c",
+    "b2nd/test_b2nd_full.c",
+    "b2nd/test_b2nd_get_slice.c",
+    "b2nd/test_b2nd_get_slice_buffer.c",
     // "b2nd/test_b2nd_insert.c", // memcpy from null detected on ubuntu tester
-    // "b2nd/test_b2nd_metalayers.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_nans.c", // Fails with "index -1 out of bounds"
+    "b2nd/test_b2nd_metalayers.c",
+    "b2nd/test_b2nd_nans.c",
     // "b2nd/test_b2nd_open_offset.c", // memcpy from null detected on ubuntu tester
-    // "b2nd/test_b2nd_persistency.c", // Fails with "index -1 out of bounds"
+    "b2nd/test_b2nd_persistency.c",
     // "b2nd/test_b2nd_resize.c", // memcpy from null detected on ubuntu tester
     // "b2nd/test_b2nd_roundtrip.c", // memcpy from null detected on ubuntu tester
-    // "b2nd/test_b2nd_save.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_save_append.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_serialize.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_set_slice_buffer.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_squeeze.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_squeeze_index.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_uninit.c", // Fails with "index -1 out of bounds"
-    // "b2nd/test_b2nd_zeros.c", // Fails with "index -1 out of bounds"
+    "b2nd/test_b2nd_save.c",
+    "b2nd/test_b2nd_save_append.c",
+    "b2nd/test_b2nd_serialize.c",
+    "b2nd/test_b2nd_set_slice_buffer.c",
+    "b2nd/test_b2nd_squeeze.c",
+    "b2nd/test_b2nd_squeeze_index.c",
+    "b2nd/test_b2nd_uninit.c",
+    "b2nd/test_b2nd_zeros.c",
 };
 
 const unix_only_test_files: []const []const u8 = &.{
