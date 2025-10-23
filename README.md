@@ -23,3 +23,12 @@ const c_blosc2_dependency = b.dependency("c_blosc2", .{
 });
 your_exe.linkLibrary(c_blosc2_dependency.artifact("blosc2"));
 ```
+
+## Compatibility
+
+| CPU      | OS        | ABI    | Status           |
+|----------|-----------|--------|------------------|
+| `x86_64` | `linux`   | `gnu`  | Tested with CI   |
+| `x86_64` | `linux`   | `musl` | Manually tested  |
+| `x86_64` | `windows` | `gnu`  | Manually tested  |
+|          | `windows` | `msvc` | Fails to compile |
