@@ -69,6 +69,10 @@ pub fn build(b: *std.Build) void {
         },
     });
 
+    if (target.result.os.tag == .windows) {
+        c_blosc2_module.addCSourceFile(.{ .file = c_blosc2_source.path("blosc/win32/threading.c") });
+    }
+
     c_blosc2_module.addCSourceFile(.{ .file = c_blosc2_source.path("blosc/shuffle.c") });
     switch (target.result.cpu.arch) {
         .x86_64 => {
@@ -128,38 +132,24 @@ pub fn build(b: *std.Build) void {
     addExample(b, "get_blocksize", c_blosc2_source.path("examples/get_blocksize.c"), example_options);
 
     // Tests
-    const test_root = c_blosc2_source.path(test_root_filename);
-    const test_include_path = c_blosc2_source.path("blosc");
-
-    const testing_template_dir = b.path("testing_template_dir/");
+    const test_options: TestOptions = .{
+        .test_step = test_step,
+        .target = target,
+        .optimize = optimize,
+        .c_blosc2 = c_blosc2_library,
+        .blosc_include_path = c_blosc2_source.path("blosc"),
+        .root_dir = c_blosc2_source.path("tests"),
+        .testing_template_dir = b.path("testing_template_dir"),
+    };
 
     for (test_files) |test_filename| {
-        const name = std.fs.path.stem(test_filename);
+        addTestExe(b, test_filename, test_options);
+    }
 
-        const exe = addTestExe(
-            b,
-            name,
-            test_root.path(b, test_filename),
-            test_include_path,
-            example_options,
-        );
-
-        const run = b.addRunArtifact(exe);
-        run.expectExitCode(0);
-
-        // We need a separate path for each of the tests,
-        // because some of the tests use the same filename.
-        //
-        // A `WriteFiles` step creates a unique directory for each one,
-        // and unlike using `b.makeTempDirectory`,
-        // still allows the Zig build system to cache the result.
-        const test_write_files = b.addWriteFiles();
-        const test_dir = test_write_files.addCopyDirectory(testing_template_dir, name, .{
-            .exclude_extensions = &.{".md"},
-        });
-        run.setCwd(test_dir);
-
-        test_step.dependOn(&run.step);
+    if (target.result.os.tag != .windows) {
+        for (unix_only_test_files) |test_filename| {
+            addTestExe(b, test_filename, test_options);
+        }
     }
 
     // TODO: support parameterized tests
@@ -187,7 +177,21 @@ fn addExample(b: *std.Build, name: []const u8, path: std.Build.LazyPath, options
     b.installArtifact(exe);
 }
 
-fn addTestExe(b: *std.Build, name: []const u8, path: std.Build.LazyPath, blosc_include_path: std.Build.LazyPath, options: ExampleOptions) *std.Build.Step.Compile {
+pub const TestOptions = struct {
+    test_step: *std.Build.Step,
+
+    target: std.Build.ResolvedTarget,
+    optimize: std.builtin.OptimizeMode,
+    c_blosc2: *std.Build.Step.Compile,
+    blosc_include_path: std.Build.LazyPath,
+    root_dir: std.Build.LazyPath,
+
+    testing_template_dir: std.Build.LazyPath,
+};
+
+fn addTestExe(b: *std.Build, test_path: []const u8, options: TestOptions) void {
+    const name = std.fs.path.stem(test_path);
+
     const exe = b.addExecutable(.{
         .name = name,
         .root_module = b.createModule(.{
@@ -196,21 +200,34 @@ fn addTestExe(b: *std.Build, name: []const u8, path: std.Build.LazyPath, blosc_i
             .link_libc = true,
         }),
     });
-    exe.root_module.addIncludePath(blosc_include_path);
+    exe.root_module.addIncludePath(options.blosc_include_path);
     exe.root_module.linkLibrary(options.c_blosc2);
     exe.root_module.addCSourceFile(.{
-        .file = path,
+        .file = options.root_dir.path(b, test_path),
     });
-    return exe;
+
+    const run = b.addRunArtifact(exe);
+    run.expectExitCode(0);
+
+    // We need a separate path for each of the tests,
+    // because some of the tests use the same filename.
+    //
+    // A `WriteFiles` step creates a unique directory for each one,
+    // and unlike using `b.makeTempDirectory`,
+    // still allows the Zig build system to cache the result.
+    const test_write_files = b.addWriteFiles();
+    const test_dir = test_write_files.addCopyDirectory(options.testing_template_dir, name, .{
+        .exclude_extensions = &.{".md"},
+    });
+    run.setCwd(test_dir);
+
+    options.test_step.dependOn(&run.step);
 }
 
-const test_root_filename = "tests";
 const test_files: []const []const u8 = &.{
     "test_api.c",
     "test_bitshuffle_leftovers.c",
-    "test_blosc1_compat.c",
     "test_change_nthreads_append.c",
-    "test_compressor.c",
     "test_contexts.c",
     // "test_copy.c", // memcpy from null detected on ubuntu tester
     // "test_delete_chunk.c", // memcpy from null detected on ubuntu tester
@@ -232,8 +249,6 @@ const test_files: []const []const u8 = &.{
     "test_maskout.c",
     "test_maxout.c",
     "test_mmap.c",
-    "test_noinit.c",
-    "test_nolock.c",
     "test_nthreads.c",
     "test_postfilter.c",
     "test_prefilter.c",
@@ -276,6 +291,13 @@ const test_files: []const []const u8 = &.{
     // "b2nd/test_b2nd_squeeze_index.c", // Fails with "index -1 out of bounds"
     // "b2nd/test_b2nd_uninit.c", // Fails with "index -1 out of bounds"
     // "b2nd/test_b2nd_zeros.c", // Fails with "index -1 out of bounds"
+};
+
+const unix_only_test_files: []const []const u8 = &.{
+    "test_noinit.c",
+    "test_nolock.c",
+    "test_compressor.c",
+    "test_blosc1_compat.c",
 };
 
 const parameterized_test_files: []const []const u8 = &.{
